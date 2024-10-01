@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos</title>
+    <link rel="stylesheet" href="styles.css">
+    <script>
+        async function fetchProductos() {
+            const response = await fetch('/api/productos');
+            const productos = await response.json();
+            const tablaBody = document.getElementById('tabla-productos');
+
+            tablaBody.innerHTML = ''; // Limpia la tabla antes de agregar los nuevos productos
+
+            productos.forEach(producto => {
+                const fila = document.createElement('tr');
+                fila.innerHTML = `
+                        <td>${producto._id}</td>
+                        <td>${producto.nombre}</td>
+                        <td>${producto.descripcion}</td>
+                        <td>${producto.precio}</td>
+                        <td>${producto.stock}</td>
+                        <td>${producto.categoria}</td>
+                        <td>
+                            <button onclick="editarProducto('${producto._id}')">Actualizar</button>
+                            <button onclick="eliminarProducto('${producto._id}')">Eliminar</button>
+                        </td>
+                    `;
+                tablaBody.appendChild(fila);
+            });
+        }
+
+        async function eliminarProducto(id) {
+            await fetch(`/productos/${id}`, {
+                method: 'DELETE'
+            });
+            fetchProductos(); // Actualiza la lista después de eliminar
+        }
+
+        function editarProducto(id) {
+            const fila = document.querySelector(`tr:has(td:contains('${id}'))`);
+            const nombre = fila.cells[1].innerText;
+            const descripcion = fila.cells[2].innerText;
+            const precio = fila.cells[3].innerText;
+            const stock = fila.cells[4].innerText;
+            const categoria = fila.cells[5].innerText;
+
+            const form = document.getElementById('formulario');
+            form.elements['nombre'].value = nombre;
+            form.elements['descripcion'].value = descripcion;
+            form.elements['precio'].value = precio;
+            form.elements['stock'].value = stock;
+            form.elements['categoria'].value = categoria;
+
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                await fetch(`/productos/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        nombre: form.elements['nombre'].value,
+                        descripcion: form.elements['descripcion'].value,
+                        precio: form.elements['precio'].value,
+                        stock: form.elements['stock'].value,
+                        categoria: form.elements['categoria'].value
+                    })
+                });
+                fetchProductos(); // Actualiza la lista después de editar
+            };
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchProductos(); // Llama a la función para cargar los productos al cargar la página
+        });
+    </script>
+</head>
+<body>
+    <h1>Gestión de Productos</h1>
+
+    <form id="formulario" action="/productos" method="POST" onsubmit="setTimeout(fetchProductos, 100);">
+        <input type="text" name="nombre" placeholder="Nombre" required>
+        <input type="text" name="descripcion" placeholder="Descripción" required>
+        <input type="number" name="precio" placeholder="Precio" required>
+        <input type="number" name="stock" placeholder="Stock" required>
+        <input type="text" name="categoria" placeholder="Categoría" required>
+        <button type="submit">Agregar Producto</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Stock</th>
+                <th>Categoría</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tabla-productos">
+            <!-- Los productos se agregarán aquí mediante JavaScript -->
+        </tbody>
+    </table>
+</body>
+</html>
